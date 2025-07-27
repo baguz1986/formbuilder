@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  avatar    String?
+  role      String   @default("user") // user, admin, super_admin
+  status    String   @default("active") // active, pending, suspended
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  forms Form[]
+  
+  @@map("users")
+}
+
+model Form {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  schema      String   // JSON string of form schema
+  settings    String   // JSON string of form settings
+  isPublished Boolean  @default(false)
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  submissions FormSubmission[]
+  analytics   FormAnalytics[]
+
+  @@map("forms")
+}
+
+model FormSubmission {
+  id          String   @id @default(cuid())
+  data        String   // JSON string of submission data
+  ipAddress   String?
+  userAgent   String?
+  submittedAt DateTime @default(now())
+
+  formId String
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@map("form_submissions")
+}
+
+model FormAnalytics {
+  id        String   @id @default(cuid())
+  formId    String
+  date      DateTime @default(now())
+  views     Int      @default(0)
+  responses Int      @default(0)
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@unique([formId, date])
+  @@map("form_analytics")
+}

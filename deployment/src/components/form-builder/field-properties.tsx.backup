@@ -1,0 +1,453 @@
+'use client';
+
+import React, { useState } from 'react';
+import { FormField } from '@/types/form';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { X, Plus, Trash2 } from 'lucide-react';
+
+interface FieldPropertiesProps {
+  field: FormField | null;
+  onUpdate: (field: FormField) => void;
+  onClose: () => void;
+}
+
+export function FieldProperties({ field, onUpdate, onClose }: FieldPropertiesProps) {
+  const [localField, setLocalField] = useState<FormField | null>(field);
+
+  React.useEffect(() => {
+    setLocalField(field);
+  }, [field]);
+
+  if (!localField) return null;
+
+  const handleSave = () => {
+    onUpdate(localField);
+    onClose();
+  };
+
+  const updateField = (updates: Partial<FormField>) => {
+    setLocalField(prev => prev ? { ...prev, ...updates } : null);
+  };
+
+  const updateValidation = (updates: Partial<FormField['validation']>) => {
+    setLocalField(prev => prev ? {
+      ...prev,
+      validation: { ...prev.validation, ...updates }
+    } : null);
+  };
+
+  const addOption = () => {
+    const newOptions = [...(localField.options || []), `Option ${(localField.options?.length || 0) + 1}`];
+    updateField({ options: newOptions });
+  };
+
+  const updateOption = (index: number, value: string) => {
+    const newOptions = [...(localField.options || [])];
+    newOptions[index] = value;
+    updateField({ options: newOptions });
+  };
+
+  const removeOption = (index: number) => {
+    const newOptions = [...(localField.options || [])];
+    newOptions.splice(index, 1);
+    updateField({ options: newOptions });
+  };
+
+  const hasOptions = ['select', 'radio', 'checkbox'].includes(localField.type);
+  const hasValidation = ['text', 'email', 'textarea', 'number'].includes(localField.type);
+  const isMatrix = localField.type === 'matrix';
+  const isRating = localField.type === 'rating';
+  const isLikert = localField.type === 'likert';
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b">
+          <h3 className="text-lg font-semibold">Field Properties</h3>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div>
+            <Label htmlFor="label">Label</Label>
+            <Input
+              id="label"
+              value={localField.label}
+              onChange={(e) => updateField({ label: e.target.value })}
+              placeholder="Field label"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="placeholder">Placeholder</Label>
+            <Input
+              id="placeholder"
+              value={localField.placeholder || ''}
+              onChange={(e) => updateField({ placeholder: e.target.value })}
+              placeholder="Placeholder text"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="required"
+              checked={localField.required || false}
+              onChange={(e) => updateField({ required: e.target.checked })}
+            />
+            <Label htmlFor="required">Required field</Label>
+          </div>
+
+          {hasOptions && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Options</Label>
+                <Button type="button" variant="outline" size="sm" onClick={addOption}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Option
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {(localField.options || []).map((option, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <Input
+                      value={option}
+                      onChange={(e) => updateOption(index, e.target.value)}
+                      placeholder={`Option ${index + 1}`}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeOption(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Matrix Field Configuration */}
+          {isMatrix && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-medium">Matrix Configuration</Label>
+                
+                <div className="mt-3">
+                  <Label htmlFor="matrixType">Input Type</Label>
+                  <select
+                    id="matrixType"
+                    value={localField.matrixType || 'radio'}
+                    onChange={(e) => updateField({ matrixType: e.target.value as 'radio' | 'checkbox' | 'text' | 'number' | 'email' | 'date' | 'textarea' })}
+                    className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="radio">Single Choice (Radio)</option>
+                    <option value="checkbox">Multiple Choice (Checkbox)</option>
+                    <option value="text">Text Input</option>
+                    <option value="number">Number Input</option>
+                    <option value="email">Email Input</option>
+                    <option value="date">Date Input</option>
+                    <option value="textarea">Text Area</option>
+                  </select>
+                </div>
+
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Matrix Rows</Label>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        const currentRows = localField.matrixRows && localField.matrixRows.length > 0 ? localField.matrixRows : ['Row 1', 'Row 2', 'Row 3'];
+                        updateField({ matrixRows: [...currentRows, `Row ${currentRows.length + 1}`] });
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Row
+                    </Button>
+                  </div>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {(localField.matrixRows && localField.matrixRows.length > 0 ? localField.matrixRows : ['Row 1', 'Row 2', 'Row 3']).map((row, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <Input
+                          value={row}
+                          onChange={(e) => {
+                            const currentRows = localField.matrixRows && localField.matrixRows.length > 0 ? localField.matrixRows : ['Row 1', 'Row 2', 'Row 3'];
+                            const newRows = [...currentRows];
+                            newRows[index] = e.target.value;
+                            updateField({ matrixRows: newRows });
+                          }}
+                          placeholder={`Row ${index + 1}`}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const currentRows = localField.matrixRows && localField.matrixRows.length > 0 ? localField.matrixRows : ['Row 1', 'Row 2', 'Row 3'];
+                            const newRows = [...currentRows];
+                            newRows.splice(index, 1);
+                            updateField({ matrixRows: newRows });
+                          }}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label>Matrix Columns</Label>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        const currentCols = localField.matrixColumns && localField.matrixColumns.length > 0 ? localField.matrixColumns : ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'];
+                        updateField({ matrixColumns: [...currentCols, `Column ${currentCols.length + 1}`] });
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Column
+                    </Button>
+                  </div>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {(localField.matrixColumns && localField.matrixColumns.length > 0 ? localField.matrixColumns : ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree']).map((col, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <Input
+                          value={col}
+                          onChange={(e) => {
+                            const currentCols = localField.matrixColumns && localField.matrixColumns.length > 0 ? localField.matrixColumns : ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'];
+                            const newCols = [...currentCols];
+                            newCols[index] = e.target.value;
+                            updateField({ matrixColumns: newCols });
+                          }}
+                          placeholder={`Column ${index + 1}`}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const currentCols = localField.matrixColumns && localField.matrixColumns.length > 0 ? localField.matrixColumns : ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'];
+                            const newCols = [...currentCols];
+                            newCols.splice(index, 1);
+                            updateField({ matrixColumns: newCols });
+                          }}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Rating Field Configuration */}
+          {isRating && (
+            <div className="space-y-4">
+              <Label className="text-base font-medium">Rating Configuration</Label>
+              
+              <div>
+                <Label htmlFor="ratingMax">Maximum Rating</Label>
+                <Input
+                  id="ratingMax"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={localField.ratingMax || 5}
+                  onChange={(e) => updateField({ ratingMax: parseInt(e.target.value) || 5 })}
+                  placeholder="Maximum rating value"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="ratingIcon">Rating Icon</Label>
+                <select
+                  id="ratingIcon"
+                  value={localField.ratingIcon || 'star'}
+                  onChange={(e) => updateField({ ratingIcon: e.target.value as 'star' | 'heart' | 'thumbs' | 'number' })}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="star">⭐ Stars</option>
+                  <option value="heart">❤️ Hearts</option>
+                  <option value="thumbs">👍 Thumbs Up</option>
+                  <option value="number">🔢 Numbers</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Likert Scale Configuration */}
+          {isLikert && (
+            <div className="space-y-4">
+              <Label className="text-base font-medium">Likert Scale Configuration</Label>
+              
+              <div>
+                <Label htmlFor="likertScale">Scale Range</Label>
+                <select
+                  id="likertScale"
+                  value={localField.likertScale?.max || 5}
+                  onChange={(e) => {
+                    const max = parseInt(e.target.value);
+                    updateField({ 
+                      likertScale: { 
+                        min: 1, 
+                        max: max,
+                        minLabel: localField.likertScale?.minLabel || '',
+                        maxLabel: localField.likertScale?.maxLabel || '',
+                        steps: max
+                      } 
+                    });
+                  }}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={3}>3-Point Scale</option>
+                  <option value={4}>4-Point Scale</option>
+                  <option value={5}>5-Point Scale</option>
+                  <option value={7}>7-Point Scale</option>
+                  <option value={10}>10-Point Scale</option>
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="minLabel">Left Label (Minimum)</Label>
+                <Input
+                  id="minLabel"
+                  value={localField.likertScale?.minLabel || ''}
+                  onChange={(e) => updateField({ 
+                    likertScale: { 
+                      ...localField.likertScale,
+                      min: localField.likertScale?.min || 1,
+                      max: localField.likertScale?.max || 5,
+                      minLabel: e.target.value 
+                    } 
+                  })}
+                  placeholder="e.g., Strongly Disagree"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="maxLabel">Right Label (Maximum)</Label>
+                <Input
+                  id="maxLabel"
+                  value={localField.likertScale?.maxLabel || ''}
+                  onChange={(e) => updateField({ 
+                    likertScale: { 
+                      ...localField.likertScale,
+                      min: localField.likertScale?.min || 1,
+                      max: localField.likertScale?.max || 5,
+                      maxLabel: e.target.value 
+                    } 
+                  })}
+                  placeholder="e.g., Strongly Agree"
+                />
+              </div>
+            </div>
+          )}
+
+          {hasValidation && (
+            <div>
+              <Label className="text-base font-medium">Validation</Label>
+              <div className="space-y-3 mt-2">
+                {(localField.type === 'text' || localField.type === 'textarea') && (
+                  <>
+                    <div>
+                      <Label htmlFor="minLength">Minimum Length</Label>
+                      <Input
+                        id="minLength"
+                        type="number"
+                        value={localField.validation?.minLength || ''}
+                        onChange={(e) => updateValidation({ 
+                          minLength: e.target.value ? parseInt(e.target.value) : undefined 
+                        })}
+                        placeholder="Minimum characters"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="maxLength">Maximum Length</Label>
+                      <Input
+                        id="maxLength"
+                        type="number"
+                        value={localField.validation?.maxLength || ''}
+                        onChange={(e) => updateValidation({ 
+                          maxLength: e.target.value ? parseInt(e.target.value) : undefined 
+                        })}
+                        placeholder="Maximum characters"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {localField.type === 'number' && (
+                  <>
+                    <div>
+                      <Label htmlFor="min">Minimum Value</Label>
+                      <Input
+                        id="min"
+                        type="number"
+                        value={localField.validation?.min || ''}
+                        onChange={(e) => updateValidation({ 
+                          min: e.target.value ? parseInt(e.target.value) : undefined 
+                        })}
+                        placeholder="Minimum value"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="max">Maximum Value</Label>
+                      <Input
+                        id="max"
+                        type="number"
+                        value={localField.validation?.max || ''}
+                        onChange={(e) => updateValidation({ 
+                          max: e.target.value ? parseInt(e.target.value) : undefined 
+                        })}
+                        placeholder="Maximum value"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {localField.type === 'text' && (
+                  <div>
+                    <Label htmlFor="pattern">Pattern (Regex)</Label>
+                    <Input
+                      id="pattern"
+                      value={localField.validation?.pattern || ''}
+                      onChange={(e) => updateValidation({ pattern: e.target.value })}
+                      placeholder="Regular expression pattern"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 p-6 border-t">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>
+            Save Changes
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

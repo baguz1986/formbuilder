@@ -1,0 +1,23 @@
+{
+  "appName": "IKI Form",
+  "appDescription": "Platform pembuat form yang mudah dan powerful",
+  "logo": "/uploads/1753594780125-oqigcqx3v3.png",
+  "primaryColor": "#6c62fe",
+  "language": "id",
+  "allowRegistration": true,
+  "requireApproval": false,
+  "landingTitle": "Buat Form Cantik dalam Hitungan Menit",
+  "landingSubtitle": "Platform terdepan untuk membuat form interaktif",
+  "landingDescription": "Buat form profesional dengan drag-and-drop builder kami. Kumpulkan respons, analisis data, dan bagikan form Anda ke seluruh dunia—tanpa perlu coding.",
+  "features": [
+    "Drag & Drop Form Builder",
+    "AI Essay Grading System",
+    "Real-time Analytics",
+    "Custom Branding",
+    "Multi-language Support",
+    "Advanced Quiz Features"
+  ],
+  "heroTitle": "Buat Form Cantik dalam Hitungan Menit",
+  "heroSubtitle": "Institut Kesehatan Immmanuel",
+  "heroDescription": "Mengasihi Mencerahkan Melayani"
+}
